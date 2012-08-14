@@ -30,6 +30,8 @@
       <version>[1,2)</version>
     </dependency>
 
+    <!-- Spring and CXF as Provided -->
+    
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-beans</artifactId>
