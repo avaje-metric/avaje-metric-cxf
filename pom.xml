@@ -22,6 +22,28 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 
+  <licenses>
+    <license>
+      <name>The Apache Software License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <id>rbygrave</id>
+      <name>Rob Bygrave</name>
+      <email>robin.bygrave@gmail.com</email>
+    </developer>
+  </developers>
+
+  <scm>
+    <connection>scm:git:https://github.com/rbygrave/avaje-metric-cxf.git</connection>
+    <developerConnection>scm:git:https://github.com/rbygrave/avaje-metric-cxf.git</developerConnection>
+    <url>https://github.com/rbygrave/avaje-metric-cxf.git</url>
+  </scm>
+
   <dependencies>
   
     <dependency>
