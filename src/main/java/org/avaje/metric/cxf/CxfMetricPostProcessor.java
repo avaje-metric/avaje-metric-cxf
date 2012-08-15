@@ -10,9 +10,10 @@ import javax.xml.ws.BindingProvider;
 import org.apache.cxf.endpoint.Client;
 import org.apache.cxf.frontend.ClientProxy;
 import org.apache.cxf.interceptor.InterceptorProvider;
+import org.avaje.metric.Clock;
 import org.avaje.metric.MetricManager;
 import org.avaje.metric.MetricName;
-import org.avaje.metric.MetricNameCache;
+import org.avaje.metric.TimedMetricGroup;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 
@@ -67,10 +68,12 @@ public class CxfMetricPostProcessor implements BeanPostProcessor {
 
       InterceptorProvider prov = (InterceptorProvider) bean;
 
-      MetricNameCache nameCache = MetricManager.getMetricNameCache(implementor.getClass());
-
-      prov.getInInterceptors().add(new ResponseTimeMessageInInterceptor(nameCache, rateUnit));
-      prov.getOutInterceptors().add(new ResponseTimeMessageOutInterceptor(nameCache, rateUnit));
+      MetricName baseName = new MetricName(implementor.getClass(), null);
+      //MetricNameCache nameCache = MetricManager.getMetricNameCache(implementor.getClass());
+      TimedMetricGroup timedMetricGroup = MetricManager.getTimedMetricGroup(baseName, rateUnit, Clock.defaultClock());
+      
+      prov.getInInterceptors().add(new ResponseTimeMessageInInterceptor(timedMetricGroup));
+      prov.getOutInterceptors().add(new ResponseTimeMessageOutInterceptor(timedMetricGroup));
 
       if (logger.isLoggable(Level.FINE)) {
         logger.fine("Registered CXF Endpoint: " + implementor.getClass().getSimpleName());
@@ -102,10 +105,10 @@ public class CxfMetricPostProcessor implements BeanPostProcessor {
     Client cxfClient = ClientProxy.getClient(bean);
 
     MetricName baseName = new MetricName("webservice.client", name, "placeholder", null);
+    TimedMetricGroup timedMetricGroup = MetricManager.getTimedMetricGroup(baseName, rateUnit, Clock.defaultClock());
 
-    MetricNameCache nameCache = MetricManager.getMetricNameCache(baseName);
-    cxfClient.getInInterceptors().add(new ResponseTimeMessageInInterceptor(nameCache, rateUnit));
-    cxfClient.getOutInterceptors().add(new ResponseTimeMessageOutInterceptor(nameCache, rateUnit));
+    cxfClient.getInInterceptors().add(new ResponseTimeMessageInInterceptor(timedMetricGroup));
+    cxfClient.getOutInterceptors().add(new ResponseTimeMessageOutInterceptor(timedMetricGroup));
     if (logger.isLoggable(Level.FINE)) {
       logger.fine("Registered CXF Client: " + name);
     }

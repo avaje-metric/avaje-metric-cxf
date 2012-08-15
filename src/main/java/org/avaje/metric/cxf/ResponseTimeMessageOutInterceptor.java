@@ -18,21 +18,19 @@
  */
 package org.avaje.metric.cxf;
 
-import java.util.concurrent.TimeUnit;
-
 import org.apache.cxf.interceptor.Fault;
 import org.apache.cxf.message.Exchange;
 import org.apache.cxf.message.Message;
 import org.apache.cxf.phase.AbstractPhaseInterceptor;
 import org.apache.cxf.phase.Phase;
-import org.avaje.metric.MetricNameCache;
+import org.avaje.metric.TimedMetricGroup;
 
 public class ResponseTimeMessageOutInterceptor extends AbstractMessageResponseTimeInterceptor {
 
   private EndingInterceptor ending = new EndingInterceptor();
 
-  public ResponseTimeMessageOutInterceptor(MetricNameCache webserviceNameCache, TimeUnit rateUnit) {
-    super(Phase.SEND, webserviceNameCache, rateUnit);
+  public ResponseTimeMessageOutInterceptor(TimedMetricGroup timedMetricGroup) {
+    super(Phase.SEND, timedMetricGroup);
   }
 
   public void handleMessage(Message message) throws Fault {

@@ -18,31 +18,23 @@
  */
 package org.avaje.metric.cxf;
 
-import java.util.concurrent.TimeUnit;
-
 import javax.xml.namespace.QName;
 
 import org.apache.cxf.message.Exchange;
 import org.apache.cxf.message.FaultMode;
 import org.apache.cxf.message.Message;
 import org.apache.cxf.phase.AbstractPhaseInterceptor;
-import org.avaje.metric.Clock;
-import org.avaje.metric.MetricManager;
-import org.avaje.metric.MetricName;
-import org.avaje.metric.MetricNameCache;
-import org.avaje.metric.TimedMetric;
 import org.avaje.metric.TimedMetricEvent;
+import org.avaje.metric.TimedMetricGroup;
 
 public abstract class AbstractMessageResponseTimeInterceptor extends AbstractPhaseInterceptor<Message> {
 
-  protected final MetricNameCache webserviceNameCache;
 
-  protected final TimeUnit rateUnit;
+  protected final TimedMetricGroup timedMetricGroup;
 
-  protected AbstractMessageResponseTimeInterceptor(String phase, MetricNameCache webserviceNameCache, TimeUnit rateUnit) {
+  protected AbstractMessageResponseTimeInterceptor(String phase, TimedMetricGroup timedMetricGroup) {
     super(phase);
-    this.webserviceNameCache = webserviceNameCache;
-    this.rateUnit = rateUnit;
+    this.timedMetricGroup = timedMetricGroup;
   }
 
   protected boolean isClient(Message msg) {
@@ -65,11 +57,9 @@ public abstract class AbstractMessageResponseTimeInterceptor extends AbstractPha
 
     QName opName = (QName) message.getContextualProperty(Message.WSDL_OPERATION);
 
-    MetricName m = webserviceNameCache.get(opName.getLocalPart());
 
-    TimedMetric timedMetric = MetricManager.getTimedMetric(m, rateUnit, Clock.defaultClock());
-    TimedMetricEvent startEvent = timedMetric.startEvent();
-
+    TimedMetricEvent startEvent = timedMetricGroup.start(opName.getLocalPart());
+    
     ex.put(TimedMetricEvent.class, startEvent);
   }
 
