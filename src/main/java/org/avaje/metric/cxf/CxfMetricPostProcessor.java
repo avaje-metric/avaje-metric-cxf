@@ -9,7 +9,9 @@ import javax.xml.ws.BindingProvider;
 
 import org.apache.cxf.endpoint.Client;
 import org.apache.cxf.frontend.ClientProxy;
+import org.apache.cxf.interceptor.Interceptor;
 import org.apache.cxf.interceptor.InterceptorProvider;
+import org.apache.cxf.message.Message;
 import org.avaje.metric.Clock;
 import org.avaje.metric.MetricManager;
 import org.avaje.metric.MetricName;
@@ -19,8 +21,8 @@ import org.springframework.beans.factory.config.BeanPostProcessor;
 
 
 /**
- * Spring bean post processor that finds CXF Endpoints and CXF client proxies
- * and registers the appropriate interceptors to collect metrics.
+ * Spring bean post processor that finds CXF Endpoint's and CXF client proxies
+ * and registers the appropriate interceptor's to collect metrics.
  */
 public class CxfMetricPostProcessor implements BeanPostProcessor {
 
@@ -69,11 +71,11 @@ public class CxfMetricPostProcessor implements BeanPostProcessor {
       InterceptorProvider prov = (InterceptorProvider) bean;
 
       MetricName baseName = new MetricName(implementor.getClass(), null);
-      //MetricNameCache nameCache = MetricManager.getMetricNameCache(implementor.getClass());
       TimedMetricGroup timedMetricGroup = MetricManager.getTimedMetricGroup(baseName, rateUnit, Clock.defaultClock());
       
-      prov.getInInterceptors().add(new ResponseTimeMessageInInterceptor(timedMetricGroup));
-      prov.getOutInterceptors().add(new ResponseTimeMessageOutInterceptor(timedMetricGroup));
+      ResponseTimeMessageInInterceptor inInterceptor = new ResponseTimeMessageInInterceptor(timedMetricGroup);
+      ResponseTimeMessageOutInterceptor outInterceptor = new ResponseTimeMessageOutInterceptor(timedMetricGroup);
+      registerInterceptors(prov, inInterceptor, outInterceptor);
 
       if (logger.isLoggable(Level.FINE)) {
         logger.fine("Registered CXF Endpoint: " + implementor.getClass().getSimpleName());
@@ -92,14 +94,14 @@ public class CxfMetricPostProcessor implements BeanPostProcessor {
       if (class1.equals(BindingProvider.class)) {
 
         Class<?> webserviceClass = determineInterface(clazz);
-        registerCxfInterceptors(bean, webserviceClass);
+        registerClientInterceptors(bean, webserviceClass);
         return true;
       }
     }
     return false;
   }
 
-  private void registerCxfInterceptors(Object bean, Class<?> webserviceClass) {
+  private void registerClientInterceptors(Object bean, Class<?> webserviceClass) {
 
     String name = (webserviceClass == null) ? bean.getClass().getSimpleName() : webserviceClass.getSimpleName();
     Client cxfClient = ClientProxy.getClient(bean);
@@ -107,17 +109,22 @@ public class CxfMetricPostProcessor implements BeanPostProcessor {
     MetricName baseName = new MetricName("webservice.client", name, "placeholder", null);
     TimedMetricGroup timedMetricGroup = MetricManager.getTimedMetricGroup(baseName, rateUnit, Clock.defaultClock());
 
-    // Add In and Out interceptors for normal processing and faults
+    // Add In and Out Interceptor's for normal processing and faults
     ResponseTimeMessageInInterceptor inIntercept = new ResponseTimeMessageInInterceptor(timedMetricGroup);
     ResponseTimeMessageOutInterceptor outIntercept = new ResponseTimeMessageOutInterceptor(timedMetricGroup);
-    cxfClient.getInInterceptors().add(inIntercept);
-    cxfClient.getOutInterceptors().add(outIntercept);
-    cxfClient.getInFaultInterceptors().add(inIntercept);
-    cxfClient.getOutFaultInterceptors().add(outIntercept);
+    
+    registerInterceptors(cxfClient, inIntercept, outIntercept);
     
     if (logger.isLoggable(Level.FINE)) {
       logger.fine("Registered CXF Client: " + name);
     }
+  }
+  
+  private void registerInterceptors(InterceptorProvider prov, Interceptor<? extends Message> in, Interceptor<? extends Message> out) {
+    prov.getInInterceptors().add(in);
+    prov.getInFaultInterceptors().add(in);
+    prov.getOutInterceptors().add(out);
+    prov.getOutFaultInterceptors().add(out);
   }
 
   private Class<?> determineInterface(Class<?> clazz) {
