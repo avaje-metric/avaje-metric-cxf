@@ -107,8 +107,14 @@ public class CxfMetricPostProcessor implements BeanPostProcessor {
     MetricName baseName = new MetricName("webservice.client", name, "placeholder", null);
     TimedMetricGroup timedMetricGroup = MetricManager.getTimedMetricGroup(baseName, rateUnit, Clock.defaultClock());
 
-    cxfClient.getInInterceptors().add(new ResponseTimeMessageInInterceptor(timedMetricGroup));
-    cxfClient.getOutInterceptors().add(new ResponseTimeMessageOutInterceptor(timedMetricGroup));
+    // Add In and Out interceptors for normal processing and faults
+    ResponseTimeMessageInInterceptor inIntercept = new ResponseTimeMessageInInterceptor(timedMetricGroup);
+    ResponseTimeMessageOutInterceptor outIntercept = new ResponseTimeMessageOutInterceptor(timedMetricGroup);
+    cxfClient.getInInterceptors().add(inIntercept);
+    cxfClient.getOutInterceptors().add(outIntercept);
+    cxfClient.getInFaultInterceptors().add(inIntercept);
+    cxfClient.getOutFaultInterceptors().add(outIntercept);
+    
     if (logger.isLoggable(Level.FINE)) {
       logger.fine("Registered CXF Client: " + name);
     }
