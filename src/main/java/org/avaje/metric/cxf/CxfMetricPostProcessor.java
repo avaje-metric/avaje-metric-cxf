@@ -70,7 +70,7 @@ public class CxfMetricPostProcessor implements BeanPostProcessor {
 
       InterceptorProvider prov = (InterceptorProvider) bean;
 
-      MetricName baseName = new MetricName(implementor.getClass(), null);
+      MetricName baseName = new MetricName("webservice","server",implementor.getClass().getSimpleName());
       TimedMetricGroup timedMetricGroup = MetricManager.getTimedMetricGroup(baseName, rateUnit, Clock.defaultClock());
       
       ResponseTimeMessageInInterceptor inInterceptor = new ResponseTimeMessageInInterceptor(timedMetricGroup);
