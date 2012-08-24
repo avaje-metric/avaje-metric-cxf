@@ -95,7 +95,7 @@ public class CxfMetricPostProcessor implements BeanPostProcessor {
     if (dollarPos > 0) {
       simpleName = simpleName.substring(0,dollarPos);
     }
-    return new MetricName("webservice","server",simpleName);
+    return new MetricName("webservice.server", simpleName, "placeholder");
   }
   
   private boolean isCxfClientProxy(Object bean) {
