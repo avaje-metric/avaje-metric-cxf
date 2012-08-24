@@ -70,9 +70,13 @@ public class CxfMetricPostProcessor implements BeanPostProcessor {
 
       InterceptorProvider prov = (InterceptorProvider) bean;
 
-      MetricName baseName = new MetricName("webservice","server",implementor.getClass().getSimpleName());
+      // Create a base MetricName and create the TimedMetricGroup. All the metrics
+      // for this endpoint share the common "base name" and the operation name will be
+      // appended to that.
+      MetricName baseName = getServiceBaseName(implementor);
       TimedMetricGroup timedMetricGroup = MetricManager.getTimedMetricGroup(baseName, rateUnit, Clock.defaultClock());
       
+      // register the interceptors to this endpoint
       ResponseTimeMessageInInterceptor inInterceptor = new ResponseTimeMessageInInterceptor(timedMetricGroup);
       ResponseTimeMessageOutInterceptor outInterceptor = new ResponseTimeMessageOutInterceptor(timedMetricGroup);
       registerInterceptors(prov, inInterceptor, outInterceptor);
@@ -85,6 +89,15 @@ public class CxfMetricPostProcessor implements BeanPostProcessor {
     return false;
   }
 
+  private MetricName getServiceBaseName(Object implementor) {
+    String simpleName = implementor.getClass().getSimpleName();
+    int dollarPos = simpleName.indexOf('$');
+    if (dollarPos > 0) {
+      simpleName = simpleName.substring(0,dollarPos);
+    }
+    return new MetricName("webservice","server",simpleName);
+  }
+  
   private boolean isCxfClientProxy(Object bean) {
 
     Class<?> clazz = bean.getClass();
