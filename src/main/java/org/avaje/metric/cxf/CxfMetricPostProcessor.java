@@ -1,6 +1,5 @@
 package org.avaje.metric.cxf;
 
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -28,20 +27,10 @@ public class CxfMetricPostProcessor implements BeanPostProcessor {
 
   private static final Logger logger = Logger.getLogger(CxfMetricPostProcessor.class.getName());
 
-  protected final TimeUnit rateUnit;
-
   /**
-   * Create with a rateUnit of Minutes.
+   * Create CxfMetricPostProcessor.
    */
   public CxfMetricPostProcessor() {
-    this(TimeUnit.MINUTES);
-  }
-
-  /**
-   * Create with a specified rateUnit.
-   */
-  public CxfMetricPostProcessor(TimeUnit rateUnit) {
-    this.rateUnit = rateUnit;
   }
 
   public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
@@ -74,7 +63,7 @@ public class CxfMetricPostProcessor implements BeanPostProcessor {
       // for this endpoint share the common "base name" and the operation name will be
       // appended to that.
       MetricName baseName = getServiceBaseName(implementor);
-      TimedMetricGroup timedMetricGroup = MetricManager.getTimedMetricGroup(baseName, rateUnit, Clock.defaultClock());
+      TimedMetricGroup timedMetricGroup = MetricManager.getTimedMetricGroup(baseName, Clock.defaultClock());
       
       // register the interceptors to this endpoint
       ResponseTimeMessageInInterceptor inInterceptor = new ResponseTimeMessageInInterceptor(timedMetricGroup);
@@ -120,7 +109,7 @@ public class CxfMetricPostProcessor implements BeanPostProcessor {
     Client cxfClient = ClientProxy.getClient(bean);
 
     MetricName baseName = new MetricName("webservice.client", name, "placeholder", null);
-    TimedMetricGroup timedMetricGroup = MetricManager.getTimedMetricGroup(baseName, rateUnit, Clock.defaultClock());
+    TimedMetricGroup timedMetricGroup = MetricManager.getTimedMetricGroup(baseName, Clock.defaultClock());
 
     // Add In and Out Interceptor's for normal processing and faults
     ResponseTimeMessageInInterceptor inIntercept = new ResponseTimeMessageInInterceptor(timedMetricGroup);
